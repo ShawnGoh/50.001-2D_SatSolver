@@ -3,10 +3,10 @@ package sat;
 import immutable.EmptyImList;
 import immutable.ImList;
 import sat.env.Environment;
-import sat.env.Variable;
 import sat.formula.Clause;
 import sat.formula.Formula;
 import sat.formula.Literal;
+import sat.formula.NegLiteral;
 import sat.formula.PosLiteral;
 
 /**
@@ -23,10 +23,7 @@ public class SATSolver {
      *         null if no such environment exists.
      */
     public static Environment solve(Formula formula) {
-        // TODO: implement this.
-
         return solve(formula.getClauses(), new Environment());
-
     }
 
     /**
@@ -42,10 +39,11 @@ public class SATSolver {
      *         or null if no such environment exists.
      */
     private static Environment solve(ImList<Clause> clauses, Environment env) {
-        // TODO: implement this.
+        // TODO: Optimize code
         //Case 1: If clause is empty
         if (clauses.isEmpty())
         {return env;}
+
         Clause smallestClause= clauses.first();
         int size = smallestClause.size();
         for (Clause c : clauses) {
@@ -70,7 +68,7 @@ public class SATSolver {
                 return testEnv1;
             } else {
                 Environment negativeEnv = env.putFalse(l.getVariable()); // trying to be positive
-                Literal negativeL = PosLiteral.make(l.getVariable());
+                Literal negativeL = NegLiteral.make(l.getVariable());
                 ImList beNegative = substitute(clauses, negativeL);
                 Environment testEnv2 = solve(beNegative, negativeEnv);
                 return testEnv2;
@@ -87,12 +85,7 @@ public class SATSolver {
                 return solve(testClausenegative, env);
             }
 
-        }
-
-
-
-
-    }
+        }}
 
     /**
      * given a clause list and literal, produce a new list resulting from
@@ -107,9 +100,9 @@ public class SATSolver {
     private static ImList<Clause> substitute(ImList<Clause> clauses,
                                              Literal l) {
         // TODO: implement this.
-        ImList<Clause> newClauses = new EmptyImList<Clause>();
-        for (Clause c : clauses) {
-            Clause newClause = c.reduce(l);
+        ImList<Clause> newClauses = new EmptyImList<Clause>(); //Assign to newClauses imlist just in case this leads to a null and the original clauses list
+        for (Clause c : clauses) {                             //will not be affected
+            Clause newClause = c.reduce(l);                    //Iterate through clauses list. and perform reduce function. Reduce function
             if (newClause != null) {
                 newClauses = newClauses.add(newClause);
             }

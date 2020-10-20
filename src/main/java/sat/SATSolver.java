@@ -2,6 +2,7 @@ package sat;
 
 import immutable.EmptyImList;
 import immutable.ImList;
+import sat.env.Bool;
 import sat.env.Environment;
 import sat.formula.Clause;
 import sat.formula.Formula;
@@ -58,18 +59,20 @@ public class SATSolver {
 
         Literal l = smallestClause.chooseLiteral();
         if (smallestClause.size() == 1) {
-            if (l instanceof PosLiteral) {
-                env = env.putTrue(l.getVariable());
-                ImList<Clause> testClausepositive = substitute(clauses, l);
-                return solve(testClausepositive, env);
-            } else {
-                env = env.putFalse(l.getVariable());
-                ImList<Clause> testClausenegative = substitute(clauses, l);
-                return solve(testClausenegative, env);
-            }
-
+//            if (l instanceof PosLiteral) {
+//                env = env.putTrue(l.getVariable());
+//                ImList<Clause> testClausepositive = substitute(clauses, l);
+//                return solve(testClausepositive, env);
+//            } else {
+//                env = env.putFalse(l.getVariable());
+//                ImList<Clause> testClausenegative = substitute(clauses, l);
+//                return solve(testClausenegative, env);
+//            }
+            boolean isNeg = l instanceof NegLiteral;  // Checking if unit var is positive or negative if positive, put true in to get rid of it, vice versa
+            env = env.put(l.getVariable(), isNeg ? Bool.FALSE : Bool.TRUE); //putting into enc
+            ImList clauseList = substitute(clauses, l); // taking out unit var and resolving everything in clauses(if false remove var, if true then clause is true = remove clause)
+            return solve(clauseList,env); // recursive call solve with new clauselist
         }
-
 
         else{
             Environment positiveEnv = env.putTrue(l.getVariable()); // trying to be positive
@@ -79,7 +82,7 @@ public class SATSolver {
             if (testEnv1 != null) {
                 return testEnv1;
             } else {
-                Environment negativeEnv = env.putFalse(l.getVariable()); // trying to be positive
+                Environment negativeEnv = env.putFalse(l.getVariable()); // trying to be negative
                 Literal negativeL = NegLiteral.make(l.getVariable());
                 ImList beNegative = substitute(clauses, negativeL);
                 Environment testEnv2 = solve(beNegative, negativeEnv);
@@ -87,6 +90,8 @@ public class SATSolver {
             }
 
         }}
+
+
 
     /**
      * given a clause list and literal, produce a new list resulting from

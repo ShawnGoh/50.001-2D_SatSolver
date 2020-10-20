@@ -100,7 +100,6 @@ public class SATSolver {
      */
     private static ImList<Clause> substitute(ImList<Clause> clauses,
                                              Literal l) {
-        // TODO: implement this.
         ImList<Clause> newClauses = new EmptyImList<Clause>(); //Assign to newClauses imlist just in case this leads to a null and the original clauses list
         for (Clause c : clauses) {                             //will not be affected
             Clause newClause = c.reduce(l);                    //Iterate through clauses list. and perform reduce function. Reduce function

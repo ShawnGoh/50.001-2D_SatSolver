@@ -9,6 +9,7 @@ import java.util.Scanner;
 import immutable.EmptyImList;
 import immutable.ImList;
 import sat.env.Environment;
+import sat.env.Variable;
 import sat.formula.Clause;
 import sat.formula.Formula;
 import sat.formula.Literal;
@@ -65,36 +66,20 @@ public class SATSolverTest {
 
 	// TODO: add the main method that reads the .cnf file and calls SATSolver.solve to determine the satisfiability
 
-    public static ImList<Clause> readFile(String directory) {
-//        Object[] retArray = new Object[3];
-//        To find the parameters:
+    public static Object[] readFile(String directory) {
+
         try {
             FileInputStream fis = new FileInputStream(directory);
             Scanner sc = new Scanner(fis);
-//            Integer noLiterals = 0;
-//            Integer noClauses = 0;
-            String line = "null";
+            Object[] output = new Object[2];
+            String line = sc.nextLine();
             while (line.charAt(0) != 'p') {
                 line = sc.nextLine();
-//                try {
-//                    if (line.charAt(0) == 'p') {
-//                        String[] params = line.split(" ");
-//                        noLiterals = Integer.parseInt(params[2]);
-//                        if (params[3].length()>0) {
-//                            noClauses = Integer.parseInt(params[3]);
-//                        }
-//                        else{
-//                            noClauses = Integer.parseInt(params[4]);
-//                        }
-//                    }
-//                } catch (Exception e) {
-//                    System.out.println("out of index");
-//                }
             }
-
 //            To parse the clauses
 
             ImList<Clause> clauses = new EmptyImList<Clause>();
+            ImList<Variable> variables = new EmptyImList<Variable>();
 
             while (sc.hasNextLine()) {
                 line = sc.nextLine();
@@ -103,44 +88,41 @@ public class SATSolverTest {
                     Clause clause = new Clause();
                     for (String l : split) {
                         if (l.length() > 0) {
-                            if (Integer.parseInt(l) == 0){
-                                continue;
-                            }
+                            if (Integer.parseInt(l) == 0){}
                             else if (l.charAt(0) == '-') {
                                 clause = clause.add(NegLiteral.make(l.replace("-", "")));
+                                Variable variable = new Variable(l.replace("-", ""));
+                                if(!variables.contains(variable)){variables = variables.add(variable);}
                             } else {
                                 clause = clause.add(PosLiteral.make(l));
+                                Variable variable = new Variable(l);
+                                if(variables.contains(variable)){variables = variables.add(variable);}
                             }
-
                         }
-
                     }
                     clauses = clauses.add(clause);
                 }
             }
-//            retArray[0] = clauses;
-//            retArray[1] = noLiterals;
-//            retArray[2] = noClauses;
-            return clauses;
+
+            output[0] = clauses;
+            output[1] = variables;
+            return output;
         }
         catch (FileNotFoundException e) {
             e.printStackTrace();
         }
         return null;
-    } //TODO clean up readfile and try to optimize
+    }
 
     public static void main(String[] args) throws IOException {
-//        String directory = "C:\\Users\\Admin\\Documents\\GitHub\\50.001-2D_SatSolver\\src\\main\\test cases\\test_2020.cnf";
-//        String directory = "C:\\Users\\Shawn\\AndroidStudioProjects\\JavaPracticeSchool\\code2d\\src\\main\\test cases\\sat2.cnf"; //TODO change to accept string[0] as directory link
+
         String directory = args[0];
-        ImList<Clause> clauses = readFile(directory);
-//        int noliterals = (int)output[1];
-//        int noclauses = (int)output[2];
+        Object[] output = readFile(directory);
+        ImList<Clause> clauses = (ImList<Clause>) output[0];
+        ImList<Variable> variables = (ImList<Variable>)output[1];
 
         Formula f = new Formula();
-        for(Clause c: clauses){
-            f=f.addClause(c);
-        }
+        for(Clause c: clauses){f=f.addClause(c); }
 
         System.out.println("SAT solver starts!!!");
         long started = System.nanoTime();
@@ -151,10 +133,17 @@ public class SATSolverTest {
         long timeTaken= time - started;
         System.out.println("Time:" + timeTaken/1000000.0 + "ms");
 
-        if(finalresult!=null){
+        if(finalresult==null){
+            System.out.println("Not Satisfiable");}
+
+        else{
+            System.out.println("Satisfiable, writing to boolean combination to BoolAssignment.txt");
         try {
-            FileWriter myWriter = new FileWriter("sat3env.txt"); //TODO change to dynamic implementation of file name
-            myWriter.write(finalresult.toString());
+            FileWriter myWriter = new FileWriter("BoolAssignment.txt");
+            myWriter.write("Boolean Assignment for Satisfied Equation\n");
+            for(Variable v : variables){
+                myWriter.write(v.toString()+ ":"+ finalresult.get(v).toString() +"\n");
+            }
             myWriter.close();
             System.out.println("Successfully wrote to the file.");
         } catch (IOException e) {

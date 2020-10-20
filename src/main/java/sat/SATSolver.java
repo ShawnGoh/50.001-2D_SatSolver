@@ -45,21 +45,33 @@ public class SATSolver {
         {return env;}
 
         Clause smallestClause= clauses.first();
-        int size = smallestClause.size();
         for (Clause c : clauses) {
             if (c.isEmpty()) {
                 return null;
             } else if (c.size() == 1) {
                 smallestClause = c;
                 break;
-            } else if (c.size() < size) {
-                size = c.size();
+            } else if (c.size() < smallestClause.size()) {
                 smallestClause = c;
             }
         }
 
         Literal l = smallestClause.chooseLiteral();
-        if (smallestClause.size() > 1) {
+        if (smallestClause.size() == 1) {
+            if (l instanceof PosLiteral) {
+                env = env.putTrue(l.getVariable());
+                ImList<Clause> testClausepositive = substitute(clauses, l);
+                return solve(testClausepositive, env);
+            } else {
+                env = env.putFalse(l.getVariable());
+                ImList<Clause> testClausenegative = substitute(clauses, l);
+                return solve(testClausenegative, env);
+            }
+
+        }
+
+
+        else{
             Environment positiveEnv = env.putTrue(l.getVariable()); // trying to be positive
             Literal positiveL = PosLiteral.make(l.getVariable());
             ImList bePositive = substitute(clauses, positiveL);
@@ -72,17 +84,6 @@ public class SATSolver {
                 ImList beNegative = substitute(clauses, negativeL);
                 Environment testEnv2 = solve(beNegative, negativeEnv);
                 return testEnv2;
-            }
-        }
-        else{
-            if (l instanceof PosLiteral) {
-                env = env.putTrue(l.getVariable());
-                ImList<Clause> testClausepositive = substitute(clauses, l);
-                return solve(testClausepositive, env);
-            } else {
-                env = env.putFalse(l.getVariable());
-                ImList<Clause> testClausenegative = substitute(clauses, l);
-                return solve(testClausenegative, env);
             }
 
         }}

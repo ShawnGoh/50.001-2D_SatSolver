@@ -12,7 +12,6 @@ import sat.env.Environment;
 import sat.env.Variable;
 import sat.formula.Clause;
 import sat.formula.Formula;
-import sat.formula.Literal;
 import sat.formula.NegLiteral;
 import sat.formula.PosLiteral;
 
@@ -96,7 +95,7 @@ public class SATSolverTest {
                             } else {
                                 clause = clause.add(PosLiteral.make(l));
                                 Variable variable = new Variable(l);
-                                if(variables.contains(variable)){variables = variables.add(variable);}
+                                if(!variables.contains(variable)){variables = variables.add(variable);}
                             }
                         }
                     }

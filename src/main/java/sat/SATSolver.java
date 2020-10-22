@@ -10,104 +10,80 @@ import sat.formula.Literal;
 import sat.formula.NegLiteral;
 import sat.formula.PosLiteral;
 
-/**
- * A simple DPLL SAT solver. See http://en.wikipedia.org/wiki/DPLL_algorithm
- */
 public class SATSolver {
-    /**
-     * Solve the problem using a simple version of DPLL with backtracking and
-     * unit propagation. The returned environment binds literals of class
-     * bool.Variable rather than the special literals used in clausification of
-     * class clausal.Literal, so that clients can more readily use it.
-     *
-     * @return an environment for which the problem evaluates to Bool.TRUE, or
-     *         null if no such environment exists.
-     */
+
+    //calls the method formula.getClauses() to retrieve the clauses which are passed as a parameter with a new Environment() in the below solve method. solve(formula.getClauses(), new Environment())
     public static Environment solve(Formula formula) {
         return solve(formula.getClauses(), new Environment());
     }
 
-    /**
-     * Takes a partial assignment of variables to values, and recursively
-     * searches for a complete satisfying assignment.
-     *
-     * @param clauses
-     *            formula in conjunctive normal form
-     * @param env
-     *            assignment of some or all variables in clauses to true or
-     *            false values.
-     * @return an environment for which all the clauses evaluate to Bool.TRUE,
-     *         or null if no such environment exists.
-     */
     private static Environment solve(ImList<Clause> clauses, Environment env) {
-        // TODO: Optimize code
-        //Case 1: If clause is empty
+        //Step 1 If there are no clauses in clauses (by checking if clauses.isEmpty()), return the environment as-is.
         if (clauses.isEmpty())
         {return env;}
 
         Clause smallestClause= clauses.first();
         for (Clause c : clauses) {
+            //Step 2 If there are any empty clauses, it signifies a FALSE boolean value. This would return null .
             if (c.isEmpty()) {
                 return null;
-            } else if (c.size() == 1) {
+            }
+            //Step 3 If there are no empty clauses, proceed to find the clause with the smallest clause size, saving it as smallestClause .
+            else if (c.size() == 1) {
                 smallestClause = c;
                 break;
             } else if (c.size() < smallestClause.size()) {
                 smallestClause = c;
             }
         }
-
+        //Step 4 The first literal in smallestClause will be saved as Literal l = smallestClause.chooseLiteral()
         Literal l = smallestClause.chooseLiteral();
+
+        //Step 5 Depending on the size of the min_clause, we will decide on what to do:
+        //Step 5a. If smallestClause is a unit clause (size of 1), the method will assign it a corresponding boolean value, adding it to the current
+        //environment(env=env.put(l.getVariable(), isNeg ? Bool.FALSE:Bool.TRUE)) such that the clause is eliminated from the
+        //boolean statement(clauseList=substitute(clauses , l). Thereafter, return the solve method solve(clauseList , env).
         if (smallestClause.size() == 1) {
-//            if (l instanceof PosLiteral) {
-//                env = env.putTrue(l.getVariable());
-//                ImList<Clause> testClausepositive = substitute(clauses, l);
-//                return solve(testClausepositive, env);
-//            } else {
-//                env = env.putFalse(l.getVariable());
-//                ImList<Clause> testClausenegative = substitute(clauses, l);
-//                return solve(testClausenegative, env);
-//            }
-            boolean isNeg = l instanceof NegLiteral;  // Checking if unit var is positive or negative if positive, put true in to get rid of it, vice versa
-            env = env.put(l.getVariable(), isNeg ? Bool.FALSE : Bool.TRUE); //putting into enc
-            ImList clauseList = substitute(clauses, l); // taking out unit var and resolving everything in clauses(if false remove var, if true then clause is true = remove clause)
-            return solve(clauseList,env); // recursive call solve with new clauselist
+            boolean isNeg = l instanceof NegLiteral;
+            env = env.put(l.getVariable(), isNeg ? Bool.FALSE : Bool.TRUE);
+            ImList clauseList = substitute(clauses, l);
+            return solve(clauseList,env);
         }
 
+        //Step 5b. If smallestClause is not a unit clause, l will first be assigned as Bool.TRUE in a new environment ( positiveEnv
+        //=env.putTrue(l.getVariable())). The current clause list (clauses) and l with a TRUE value is passed through the substitute
+        //method and assigned as a new variable( bePositive=substitute(clauses, positiveL) ). They are then recursively fed into the
+        //solve method(solve(bePositive, positiveEnv)). Return the resulting environment if it is not null.
         else{
-            Environment positiveEnv = env.putTrue(l.getVariable()); // trying to be positive
+            Environment positiveEnv = env.putTrue(l.getVariable());
             Literal positiveL = PosLiteral.make(l.getVariable());
             ImList bePositive = substitute(clauses, positiveL);
             Environment testEnv1 = solve(bePositive, positiveEnv);
             if (testEnv1 != null) {
                 return testEnv1;
-            } else {
-                Environment negativeEnv = env.putFalse(l.getVariable()); // trying to be negative
+            }
+
+            //If the resulting environment has a null value, we will backtrack and l will be assigned as Bool.FALSE in a new
+            //environment(negativeEnv = env.putFalse(l.getVariable()) ). The current clause list (clauses) and l with a FALSE value is
+            //passed through the substitute method and assigned as a new variable( beNegative = substitute(clauses ,
+            //negativeL) Regardless of the value, return the resulting environment of the solve method solve(beNegative , negativeEnv))
+            else {
+                Environment negativeEnv = env.putFalse(l.getVariable());
                 Literal negativeL = NegLiteral.make(l.getVariable());
                 ImList beNegative = substitute(clauses, negativeL);
                 Environment testEnv2 = solve(beNegative, negativeEnv);
                 return testEnv2;
             }
-
         }}
 
-
-
-    /**
-     * given a clause list and literal, produce a new list resulting from
-     * setting that literal to true
-     *
-     * @param clauses
-     *            , a list of clauses
-     * @param l
-     *            , a literal to set to true
-     * @return a new list of clauses resulting from setting l to true
-     */
+    //initialises an empty ImList (newClauses) to store the new clauses in, then
+    //iterating through the clauses to call reduce(l) to set the literal to true or false in the clause list. The new clause is added to the
+    //empty ImList in each loop, returning newClauses after iteration has concluded.
     private static ImList<Clause> substitute(ImList<Clause> clauses,
                                              Literal l) {
-        ImList<Clause> newClauses = new EmptyImList<Clause>(); //Assign to newClauses imlist just in case this leads to a null and the original clauses list
-        for (Clause c : clauses) {                             //will not be affected
-            Clause newClause = c.reduce(l);                    //Iterate through clauses list. and perform reduce function. Reduce function
+        ImList<Clause> newClauses = new EmptyImList<Clause>();
+        for (Clause c : clauses) {
+            Clause newClause = c.reduce(l);
             if (newClause != null) {
                 newClauses = newClauses.add(newClause);
             }
